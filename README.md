@@ -1,4 +1,4 @@
-# Hardhat Hackathon Boilerplate
+# BaconFarm
 
 This repository contains a sample project that you can use as the starting point
 for your Ethereum project. It's also a great fit for learning the basics of
@@ -87,4 +87,3 @@ this repository or [our Discord server](https://invite.gg/HardhatSupport).
 Also you can [follow us on Twitter](https://twitter.com/HardhatHQ).
 
 **Happy _buidling_!**
-# BaconFarm
