@@ -28,6 +28,10 @@ deploy = async () => {
   staking = await stakingFactory.deploy(memberToken.address, memberToken.address);
   await staking.deployed()
 
+  await staking.grantRole(ethers.utils.id("TRANSFER_ROLE"), memberNFT.address)
+  await memberNFT.grantRole(ethers.utils.id("MINTER_ROLE"), staking.address);
+  await memberNFT.grantRole(ethers.utils.id("BURNER_ROLE"), staking.address);
+
   return { memberToken, memberNFT, staking };
 };
 

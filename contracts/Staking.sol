@@ -119,7 +119,7 @@ contract Staking is Ownable, AccessControl {
         emit Staked(msg.sender, amount);
 
         // mint memberNFT based on new balance
-        if (address(memberNFT) != address(0)) {
+        if (address(memberNFT) != address(0) && NFTCost > 0) {
             uint256 numToMint = _balances[msg.sender].div(NFTCost);
             bytes memory data;
             memberNFT.mint(msg.sender, NFTId, numToMint, data);
@@ -134,7 +134,7 @@ contract Staking is Ownable, AccessControl {
         emit Unstaked(msg.sender, amount);
 
         // burn memberNFT based on new balance
-        if (address(memberNFT) != address(0)) {
+        if (address(memberNFT) != address(0) && NFTCost > 0) {
             uint256 newNumOfNFT = _balances[msg.sender].div(NFTCost);
             uint256 oldNumOfNFT = memberNFT.balanceOf(msg.sender, 0);
             uint256 numToBurn = newNumOfNFT;

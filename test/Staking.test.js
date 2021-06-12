@@ -56,23 +56,37 @@ describe('Staking contract', function () {
   });
 
   describe('stake()', async function () {
-    stakeAmount = 1000;
+    NFTCost = 1000;
     beforeEach(async function () {
-      await expect(memberToken.approve(staking.address, stakeAmount))
+      await expect(memberToken.approve(staking.address, NFTCost * 10))
         .to.emit(memberToken, 'Approval')
-        .withArgs(signer1.address, staking.address, stakeAmount);
+        .withArgs(signer1.address, staking.address, NFTCost * 10);
     })
     it(`can stake tokens and record correct amount`, async function () {
       let balanceBefore = await memberToken.balanceOf(signer1.address);
-      expect(await staking.stake(stakeAmount))
+      expect(await staking.stake(NFTCost))
         .to.emit(staking, 'Staked')
-        .withArgs(signer1.address, stakeAmount);
-      expect(await staking.balanceOf(signer1.address)).to.equal(stakeAmount);
+        .withArgs(signer1.address, NFTCost);
+      expect(await staking.balanceOf(signer1.address)).to.equal(NFTCost);
       let balanceAfter = await memberToken.balanceOf(signer1.address);
       let amountDeducted = balanceBefore.sub(balanceAfter);
-      expect(amountDeducted).to.equal(stakeAmount);
+      expect(amountDeducted).to.equal(NFTCost);
+      expect(await memberNFT.balanceOf(signer1.address, 0)).to.equal(0);
+    });
+
+    it(`can stake enough tokens to mint 1 NFT`, async function () {
+      await staking.setNFTDetails(memberNFT.address, 0, 1000);
+      expect(await staking.stake(NFTCost))
+        .to.emit(memberNFT, 'TransferSingle')
+        .withArgs(staking.address, ethers.constants.AddressZero, signer1.address, 0, 1);
+    });
+
+    it(`can stake enough tokens to mint 5 NFT`, async function () {
+      await staking.setNFTDetails(memberNFT.address, 0, 1000);
+      expect(await staking.stake(NFTCost * 5))
+        .to.emit(memberNFT, 'TransferSingle')
+        .withArgs(staking.address, ethers.constants.AddressZero, signer1.address, 0, 5);
     });
   });
-
   // tested upto here
 });
