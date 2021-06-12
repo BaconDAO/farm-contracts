@@ -24,10 +24,6 @@ describe('Staking contract', function () {
 
     // set signer1 as the rewardDistributionManager, who can add additional rewards
     await staking.setRewardDistribution(signer1.address);
-
-    await expect(memberToken.approve(staking.address, ONE_THOUSAND_PER_SECOND))
-      .to.emit(memberToken, 'Approval')
-      .withArgs(signer1.address, staking.address, ONE_THOUSAND_PER_SECOND);
   });
 
   afterEach(async () => {
@@ -42,10 +38,29 @@ describe('Staking contract', function () {
   });
 
   describe('notifyRewardAmount()', async function () {
-    it(`can start first reward`, async function () {
+    it(`can assign first reward amount`, async function () {
       expect(await memberToken.transfer(staking.address, ONE_THOUSAND_PER_SECOND));
       expect(await staking.notifyRewardAmount(ONE_THOUSAND_PER_SECOND));
       expect(await staking.rewardRate()).to.equal(1000);
+    });
+  });
+
+  describe('stake()', async function () {
+    stakeAmount = 1000;
+    beforeEach(async function () {
+      await expect(memberToken.approve(staking.address, stakeAmount))
+        .to.emit(memberToken, 'Approval')
+        .withArgs(signer1.address, staking.address, stakeAmount);
+    })
+    it(`can stake tokens and record correct amount`, async function () {
+      let balanceBefore = await memberToken.balanceOf(signer1.address);
+      expect(await staking.stake(stakeAmount))
+        .to.emit(staking, 'Staked')
+        .withArgs(signer1.address, stakeAmount);
+      expect(await staking.balanceOf(signer1.address)).to.equal(stakeAmount);
+      let balanceAfter = await memberToken.balanceOf(signer1.address);
+      let amountDeducted = balanceBefore.sub(balanceAfter);
+      expect(amountDeducted).to.equal(stakeAmount);
     });
   });
 
