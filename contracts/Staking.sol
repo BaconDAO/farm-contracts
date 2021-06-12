@@ -20,8 +20,6 @@ contract Staking is Ownable, AccessControl {
 
     IERC20 public stakeToken;
     IERC20 public rewardToken;
-
-    IERC20 public memberToken;
     IMemberNFT public memberNFT;
     uint256 public NFTCost;
     uint256 public NFTId; // this ID decides which NFT ID this farm mints/burns
@@ -76,10 +74,6 @@ contract Staking is Ownable, AccessControl {
         rewardToken = _rewardToken;
     }
 
-    function setMemberToken(IERC20 _memberToken) public onlyOwner {
-        memberToken = _memberToken;
-    }
-
     function setMemberNFT(IMemberNFT _memberNFT) public onlyOwner {
         memberNFT = _memberNFT;
     }
@@ -114,24 +108,33 @@ contract Staking is Ownable, AccessControl {
         require(amount > 0, "Cannot stake 0");
         _totalSupply = _totalSupply.add(amount);
         _balances[msg.sender] = _balances[msg.sender].add(amount);
-        uint256 numToMint = _balances[msg.sender].div(NFTCost);
-        bytes memory data;
-        memberNFT.mint(msg.sender, NFTId, numToMint, data);
+
         stakeToken.safeTransferFrom(msg.sender, address(this), amount);
         emit Staked(msg.sender, amount);
+
+        // mint memberNFT based on new balance
+        if (address(memberNFT) != address(0)) {
+            uint256 numToMint = _balances[msg.sender].div(NFTCost);
+            bytes memory data;
+            memberNFT.mint(msg.sender, NFTId, numToMint, data);
+        }
     }
 
     function unstake(uint256 amount) public updateReward(msg.sender) {
         require(amount > 0, "Cannot withdraw 0");
         _totalSupply = _totalSupply.sub(amount);
         _balances[msg.sender] = _balances[msg.sender].sub(amount);
-        uint256 newNumOfNFT = _balances[msg.sender].div(NFTCost);
-        uint256 oldNumOfNFT = memberNFT.balanceOf(msg.sender, 0);
-        uint256 numToBurn = newNumOfNFT;
-        bytes memory data;
-        memberNFT.burn(msg.sender, NFTId, numToBurn);
         stakeToken.safeTransfer(msg.sender, amount);
         emit Unstaked(msg.sender, amount);
+
+        // burn memberNFT based on new balance
+        if (address(memberNFT) != address(0)) {
+            uint256 newNumOfNFT = _balances[msg.sender].div(NFTCost);
+            uint256 oldNumOfNFT = memberNFT.balanceOf(msg.sender, 0);
+            uint256 numToBurn = newNumOfNFT;
+            bytes memory data;
+            memberNFT.burn(msg.sender, NFTId, numToBurn);
+        }
     }
 
     function transferStake(
