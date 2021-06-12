@@ -12,11 +12,11 @@ import "./IMemberNFT.sol";
 import "hardhat/console.sol";
 
 contract Staking is Ownable, AccessControl {
-    // this contract lets users stake/unstake Member LP tokens and mints/burns ERC1155 (Member tickets)
+    // this contract lets users stake/unstake ERC20 tokens and mints/burns ERC1155 tokens that represent their stake/membership
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
+    bytes32 public constant TRANSFER_ROLE = keccak256("TRANSFER_ROLE");
 
     IERC20 public stakeToken;
     IERC20 public rewardToken;
@@ -70,7 +70,7 @@ contract Staking is Ownable, AccessControl {
 
     constructor(IERC20 _stakeToken, IERC20 _rewardToken) {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
-        _setRoleAdmin(MANAGER_ROLE, DEFAULT_ADMIN_ROLE);
+        _setRoleAdmin(TRANSFER_ROLE, DEFAULT_ADMIN_ROLE);
 
         stakeToken = _stakeToken;
         rewardToken = _rewardToken;
@@ -140,8 +140,8 @@ contract Staking is Ownable, AccessControl {
         uint256 amount
     ) external {
         require(
-            hasRole(MANAGER_ROLE, _msgSender()),
-            "Staking: must have manager role to transfer stake"
+            hasRole(TRANSFER_ROLE, _msgSender()),
+            "Staking: must have transfer role to transfer stake"
         );
         require(amount > 0, "Cannot transfer 0");
         _balances[from] = _balances[from].sub(amount);

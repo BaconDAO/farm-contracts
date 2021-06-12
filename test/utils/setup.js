@@ -22,10 +22,11 @@ deploy = async () => {
   );
   await memberNFT.deployed();
 
-  // set memberToken contract as a minter in memberNFT contract
-  await memberNFT.setMinterRole(launchpad.address);
+  stakingFactory = await ethers.getContractFactory('Staking');
+  staking = await stakingFactory.deploy(memberToken.address, memberToken.address);
+  await staking.deployed()
 
-  return { memberToken, memberNFT, usdToken, whitelist, launchpad };
+  return { memberToken, memberNFT, staking };
 };
 
 module.exports = {

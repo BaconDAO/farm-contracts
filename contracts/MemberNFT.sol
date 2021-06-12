@@ -25,14 +25,10 @@ contract MemberNFT is Context, AccessControl, ERC1155 {
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
 
     /**
-     * @dev Grants `DEFAULT_ADMIN_ROLE`, `MINTER_ROLE`, and `BURNER_ROLE` to the account that
-     * deploys the contract.
+     * @dev Grants `DEFAULT_ADMIN_ROLE` to the account that deploys the contract.
      */
     constructor(string memory uri) ERC1155(uri) {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
-
-        _setupRole(MINTER_ROLE, _msgSender());
-        _setupRole(BURNER_ROLE, _msgSender());
     }
 
     /**
@@ -90,7 +86,7 @@ contract MemberNFT is Context, AccessControl, ERC1155 {
         uint256 amount
     ) public virtual {
         require(
-            hasRole(MINTER_ROLE, _msgSender()),
+            hasRole(BURNER_ROLE, _msgSender()),
             "MemberNFT: must have burner role to burn"
         );
 
@@ -106,7 +102,7 @@ contract MemberNFT is Context, AccessControl, ERC1155 {
         uint256[] memory amounts
     ) public virtual {
         require(
-            hasRole(MINTER_ROLE, _msgSender()),
+            hasRole(BURNER_ROLE, _msgSender()),
             "MemberNFT: must have burner role to burn"
         );
 

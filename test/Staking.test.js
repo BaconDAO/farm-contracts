@@ -13,10 +13,10 @@ describe('MemberNFT contract', function () {
 
     snapshotId = await takeSnapshot();
 
-    const { memberToken, memberNFT } = await deploy();
-    await expect(memberToken.approve(memberNFT.address, BALANCE_REQUIRED))
+    const { memberToken, memberNFT, staking } = await deploy();
+    await expect(memberToken.approve(staking.address, 1000))
       .to.emit(memberToken, 'Approval')
-      .withArgs(signer1.address, memberNFT.address, BALANCE_REQUIRED);
+      .withArgs(signer1.address, staking.address, 1000);
   });
 
   afterEach(async () => {
@@ -24,11 +24,7 @@ describe('MemberNFT contract', function () {
   });
 
   describe('constructor()', async function () {
-    it(`can initialize number of tickets correctly`, async function () {
-      let ticket = await memberNFT.memberNFTs(ticketId);
-      expect(ticket.numTickets.toNumber()).to.equals(
-        NUM_TICKETS[ticketId % NUM_TICKETS.length]
-      );
+    it(`can initialize correctly`, async function () {
     });
   });
 });
