@@ -30,10 +30,20 @@ describe('Staking contract', function () {
     await revertToSnapshot(snapshotId);
   });
 
-  describe('setMemberNFT()', async function () {
+  describe('setNFTDetails()', async function () {
     it(`can set MemberNFT contract address`, async function () {
-      await staking.setMemberNFT(memberNFT.address);
+      await staking.setNFTDetails(memberNFT.address, 0, 1000);
       expect(await staking.memberNFT()).to.equal(memberNFT.address);
+    });
+
+    it(`can set NFT ID`, async function () {
+      await staking.setNFTDetails(memberNFT.address, 0, 1000);
+      expect(await staking.NFTId()).to.equal(0);
+    });
+
+    it(`can set NFTCost`, async function () {
+      await staking.setNFTDetails(memberNFT.address, 0, 1000);
+      expect(await staking.NFTCost()).to.equal(1000);
     });
   });
 

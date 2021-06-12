@@ -21,8 +21,8 @@ contract Staking is Ownable, AccessControl {
     IERC20 public stakeToken;
     IERC20 public rewardToken;
     IMemberNFT public memberNFT;
-    uint256 public NFTCost;
     uint256 public NFTId; // this ID decides which NFT ID this farm mints/burns
+    uint256 public NFTCost;
 
     uint256 public constant DURATION = 14 days;
     uint256 private _totalSupply;
@@ -74,8 +74,14 @@ contract Staking is Ownable, AccessControl {
         rewardToken = _rewardToken;
     }
 
-    function setMemberNFT(IMemberNFT _memberNFT) public onlyOwner {
+    function setNFTDetails(
+        IMemberNFT _memberNFT,
+        uint256 _NFTId,
+        uint256 _NFTCost
+    ) public onlyOwner {
         memberNFT = _memberNFT;
+        NFTId = _NFTId;
+        NFTCost = _NFTCost;
     }
 
     function lastTimeRewardApplicable() public view returns (uint256) {
