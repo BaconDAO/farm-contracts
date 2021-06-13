@@ -110,20 +110,39 @@ contract Staking is Ownable, AccessControl {
                 .add(rewards[account]);
     }
 
+    function updateNFTBalance(address account) internal {
+        if (address(memberNFT) != address(0) && NFTCost > 0) {
+            uint256 currentNFTBalance = memberNFT.balanceOf(msg.sender, NFTId);
+            uint256 newNFTBalance = _balances[msg.sender].div(NFTCost);
+
+            if (currentNFTBalance < newNFTBalance) {
+                // mint memberNFT based on new balance
+                bytes memory data;
+                memberNFT.mint(
+                    msg.sender,
+                    NFTId,
+                    newNFTBalance - currentNFTBalance,
+                    data
+                );
+            } else if (currentNFTBalance > newNFTBalance) {
+                // burn memberNFT based on new balance
+                bytes memory data;
+                memberNFT.burn(
+                    msg.sender,
+                    NFTId,
+                    currentNFTBalance - newNFTBalance
+                );
+            }
+        }
+    }
+
     function stake(uint256 amount) public updateReward(msg.sender) {
         require(amount > 0, "Cannot stake 0");
         _totalSupply = _totalSupply.add(amount);
         _balances[msg.sender] = _balances[msg.sender].add(amount);
-
         stakeToken.safeTransferFrom(msg.sender, address(this), amount);
         emit Staked(msg.sender, amount);
-
-        // mint memberNFT based on new balance
-        if (address(memberNFT) != address(0) && NFTCost > 0) {
-            uint256 numToMint = _balances[msg.sender].div(NFTCost);
-            bytes memory data;
-            memberNFT.mint(msg.sender, NFTId, numToMint, data);
-        }
+        updateNFTBalance(msg.sender);
     }
 
     function unstake(uint256 amount) public updateReward(msg.sender) {
@@ -132,15 +151,7 @@ contract Staking is Ownable, AccessControl {
         _balances[msg.sender] = _balances[msg.sender].sub(amount);
         stakeToken.safeTransfer(msg.sender, amount);
         emit Unstaked(msg.sender, amount);
-
-        // burn memberNFT based on new balance
-        if (address(memberNFT) != address(0) && NFTCost > 0) {
-            uint256 newNumOfNFT = _balances[msg.sender].div(NFTCost);
-            uint256 oldNumOfNFT = memberNFT.balanceOf(msg.sender, 0);
-            uint256 numToBurn = newNumOfNFT;
-            bytes memory data;
-            memberNFT.burn(msg.sender, NFTId, numToBurn);
-        }
+        updateNFTBalance(msg.sender);
     }
 
     function transferStake(

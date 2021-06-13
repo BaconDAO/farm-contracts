@@ -88,5 +88,53 @@ describe('Staking contract', function () {
         .withArgs(staking.address, ethers.constants.AddressZero, signer1.address, 0, 5);
     });
   });
+
+  describe('unstake()', async function () {
+    NFTCost = 1000;
+    NFTId = 0;
+    beforeEach(async function () {
+      expect(await memberToken.approve(staking.address, NFTCost * 10))
+        .to.emit(memberToken, 'Approval')
+        .withArgs(signer1.address, staking.address, NFTCost * 10);
+    })
+
+    it(`can unstake tokens and record correct amount`, async function () {
+
+      // stake 10000
+      expect(await staking.stake(NFTCost * 10))
+        .to.emit(staking, 'Staked')
+        .withArgs(signer1.address, NFTCost * 10);
+      // unstake 1000
+      expect(await staking.unstake(NFTCost))
+        .to.emit(staking, 'Unstaked')
+        .withArgs(signer1.address, NFTCost);
+      // balance 9000
+      expect(await staking.balanceOf(signer1.address)).to.equal(NFTCost * 9);
+    });
+
+    it(`can unstake tokens to burn 1 NFT`, async function () {
+      await staking.setNFTDetails(memberNFT.address, NFTId, 1000);
+      // stake 10000
+      expect(await staking.stake(NFTCost * 10))
+        .to.emit(staking, 'Staked')
+        .withArgs(signer1.address, NFTCost * 10);
+      // balance of 9 NFTs left
+      expect(await memberNFT.balanceOf(signer1.address, NFTId)).to.equal(10);
+
+      // unstake 1000, should show burning of 1 NFT
+      expect(await staking.unstake(NFTCost))
+        .to.emit(memberNFT, 'TransferSingle')
+        .withArgs(staking.address, signer1.address, ethers.constants.AddressZero, NFTId, 1);
+      // balance of 9 NFTs left
+      expect(await memberNFT.balanceOf(signer1.address, NFTId)).to.equal(9);
+    });
+
+    // it(`can stake enough tokens to mint 5 NFT`, async function () {
+    //   await staking.setNFTDetails(memberNFT.address, 0, 1000);
+    //   expect(await staking.stake(NFTCost * 5))
+    //     .to.emit(memberNFT, 'TransferSingle')
+    //     .withArgs(staking.address, ethers.constants.AddressZero, signer1.address, 0, 5);
+    // });
+  });
   // tested upto here
 });
