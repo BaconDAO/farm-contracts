@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IMemberNFT.sol";
 import "hardhat/console.sol";
 
-contract Staking is Ownable, AccessControl {
+contract Farm is Ownable, AccessControl {
     // this contract lets users stake/unstake ERC20 tokens and mints/burns ERC1155 tokens that represent their stake/membership
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -161,7 +161,7 @@ contract Staking is Ownable, AccessControl {
     ) external {
         require(
             hasRole(TRANSFER_ROLE, _msgSender()),
-            "Staking: must have transfer role to transfer stake"
+            "Farm: must have transfer role to transfer stake"
         );
         require(amount > 0, "Cannot transfer 0");
         _balances[from] = _balances[from].sub(amount);

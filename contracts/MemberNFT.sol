@@ -4,7 +4,10 @@ pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "./IFarm.sol";
 
 /**
  * @dev {ERC1155} token, including:
@@ -20,9 +23,13 @@ import "@openzeppelin/contracts/utils/Context.sol";
  * roles, as well as the default admin role, which will let it grant both minter
  * and burner roles to other accounts.
  */
-contract MemberNFT is Context, AccessControl, ERC1155 {
+contract MemberNFT is Context, AccessControl, Ownable, ERC1155 {
+    using SafeMath for uint256;
+
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
+
+    mapping(uint256 => IFarm) public farmsMap;
 
     /**
      * @dev Grants `DEFAULT_ADMIN_ROLE` to the account that deploys the contract.
@@ -31,6 +38,15 @@ contract MemberNFT is Context, AccessControl, ERC1155 {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _setRoleAdmin(MINTER_ROLE, DEFAULT_ADMIN_ROLE);
         _setRoleAdmin(BURNER_ROLE, DEFAULT_ADMIN_ROLE);
+    }
+
+    function setFarms(uint256[] memory ids, address[] memory farms)
+        public
+        onlyOwner
+    {
+        for (uint256 i = 0; i < ids.length; i++) {
+            farmsMap[ids[i]] = IFarm(farms[i]);
+        }
     }
 
     /**
@@ -109,5 +125,27 @@ contract MemberNFT is Context, AccessControl, ERC1155 {
         );
 
         _burnBatch(account, ids, amounts);
+    }
+
+    function _beforeTokenTransfer(
+        address operator,
+        address from,
+        address to,
+        uint256[] memory ids,
+        uint256[] memory amounts,
+        bytes memory data
+    ) internal override(ERC1155) {
+        if (from != address(0) && to != address(0)) {
+            for (uint256 i = 0; i < ids.length; i++) {
+                if (address(farmsMap[i]) != address(0)) {
+                    uint256 NFTCost = farmsMap[i].NFTCost();
+                    farmsMap[i].transferStake(
+                        from,
+                        to,
+                        amounts[i].mul(NFTCost)
+                    );
+                }
+            }
+        }
     }
 }

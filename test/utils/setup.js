@@ -7,6 +7,8 @@ const MEMBER_TOKEN_SYMBOL = 'MEMBER';
 const MEMBER_TOKEN_TOTAL_SUPPLY = BigNumber.from(10000000).mul(ethers.constants.WeiPerEther);
 
 const URI = 'http://localhost:3000';
+const NFT_COST = 1000;
+const NFT_ID = 0;
 
 deploy = async () => {
   memberTokenFactory = await ethers.getContractFactory('MemberToken');
@@ -23,19 +25,24 @@ deploy = async () => {
   );
   await memberNFT.deployed();
 
-  stakingFactory = await ethers.getContractFactory('Staking');
-  // simple deployment of staking and rewarding the same token (ie. BACON)
-  staking = await stakingFactory.deploy(memberToken.address, memberToken.address);
-  await staking.deployed()
+  farmFactory = await ethers.getContractFactory('Farm');
+  // simple deployment of farm and rewarding the same token (ie. BACON)
+  farm = await farmFactory.deploy(memberToken.address, memberToken.address);
+  await farm.deployed()
 
-  await staking.grantRole(ethers.utils.id("TRANSFER_ROLE"), memberNFT.address)
-  await memberNFT.grantRole(ethers.utils.id("MINTER_ROLE"), staking.address);
-  await memberNFT.grantRole(ethers.utils.id("BURNER_ROLE"), staking.address);
+  await memberNFT.grantRole(ethers.utils.id("MINTER_ROLE"), farm.address);
+  await memberNFT.grantRole(ethers.utils.id("BURNER_ROLE"), farm.address);
+  await memberNFT.setFarms([NFT_ID], [farm.address]);
 
-  return { memberToken, memberNFT, staking };
+  await farm.grantRole(ethers.utils.id("TRANSFER_ROLE"), memberNFT.address)
+  await farm.setNFTDetails(memberNFT.address, NFT_ID, NFT_COST);
+
+  return { memberToken, memberNFT, farm };
 };
 
 module.exports = {
   deploy,
-  URI
+  URI,
+  NFT_COST,
+  NFT_ID
 };
