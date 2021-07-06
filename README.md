@@ -9,3 +9,4 @@ Deployment guide:
 5. Call SetNFTDetails in farm contract
 6. Set Farm contract as MINTER_ROLE and BURNER_ROLE in NFT contract
 7. Call SetFarms in NFT contract
+8. Call setRewardDistribution in Farm contract as deployer, so deployer can send reward tokens to top up farm.
