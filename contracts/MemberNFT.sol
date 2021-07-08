@@ -68,6 +68,10 @@ contract MemberNFT is Context, AccessControl, Ownable, ERC721 {
             hasRole(MINTER_ROLE, _msgSender()),
             "MemberNFT: must have minter role to mint"
         );
+        require(
+            balanceOf(to) < 1,
+            "MemberNFT: each address can have at most 1 NFT"
+        );
 
         // We cannot just use balanceOf to create the new tokenId because tokens
         // can be burned (destroyed), so we need a separate counter.
@@ -97,8 +101,7 @@ contract MemberNFT is Context, AccessControl, Ownable, ERC721 {
         address to,
         uint256 tokenId
     ) internal virtual override(ERC721) {
-        require(false, "MemberNFT: transfer not allowed");
-        super._transfer(from, to, tokenId);
+        revert("MemberNFT: transfer not allowed");
     }
 
     function _beforeTokenTransfer(

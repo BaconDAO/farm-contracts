@@ -53,4 +53,12 @@ describe('MemberNFT contract', function () {
         .to.be.revertedWith("MemberNFT: transfer not allowed")
     });
   });
+
+  describe('mint()', async function () {
+    it('cannot have more than 1 NFT', async function () {
+      await memberNFT.grantRole(ethers.utils.id("MINTER_ROLE"), signer1.address);
+      await expect(memberNFT.mint(signer1.address));
+      await expect(memberNFT.mint(signer1.address)).to.be.revertedWith("MemberNFT: each address can have at most 1 NFT")
+    })
+  })
 });
