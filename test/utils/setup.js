@@ -6,9 +6,10 @@ const MEMBER_TOKEN_SYMBOL = 'MEMBER';
 // total supply 100Million, taking into account 1e18 decimals
 const MEMBER_TOKEN_TOTAL_SUPPLY = BigNumber.from(10000000).mul(ethers.constants.WeiPerEther);
 
+const NFT_NAME = 'BaconDAO Purple Membership';
+const NFT_SYMBOL = 'BPM'
 const URI = 'http://localhost:3000';
 const NFT_COST = 1000;
-const NFT_ID = 0;
 
 deploy = async () => {
   memberTokenFactory = await ethers.getContractFactory('MemberToken');
@@ -20,7 +21,7 @@ deploy = async () => {
   await memberToken.deployed();
 
   memberNFTFactory = await ethers.getContractFactory('MemberNFT');
-  memberNFT = await memberNFTFactory.deploy(
+  memberNFT = await memberNFTFactory.deploy(NFT_NAME, NFT_SYMBOL,
     URI
   );
   await memberNFT.deployed();
@@ -32,10 +33,9 @@ deploy = async () => {
 
   await memberNFT.grantRole(ethers.utils.id("MINTER_ROLE"), farm.address);
   await memberNFT.grantRole(ethers.utils.id("BURNER_ROLE"), farm.address);
-  await memberNFT.setFarms([NFT_ID], [farm.address]);
 
   await farm.grantRole(ethers.utils.id("TRANSFER_ROLE"), memberNFT.address)
-  await farm.setNFTDetails(memberNFT.address, NFT_ID, NFT_COST);
+  await farm.setNFTDetails([memberNFT.address], [NFT_COST]);
 
   return { memberToken, memberNFT, farm };
 };
@@ -44,5 +44,4 @@ module.exports = {
   deploy,
   URI,
   NFT_COST,
-  NFT_ID
 };

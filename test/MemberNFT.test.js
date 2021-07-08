@@ -3,7 +3,6 @@ const { expect } = require('chai');
 const {
   deploy,
   NFT_COST,
-  NFT_ID
 } = require('./utils/setup.js');
 
 const {
@@ -36,27 +35,22 @@ describe('MemberNFT contract', function () {
     await revertToSnapshot(snapshotId);
   });
 
-  describe('transferStake()', async function () {
+  describe('transfer()', async function () {
     beforeEach(async function () {
       expect(await memberToken.approve(farm.address, NFT_COST * 10))
         .to.emit(memberToken, 'Approval')
         .withArgs(signer1.address, farm.address, NFT_COST * 10);
     })
 
-    it(`can transfer 1 NFT and corresponding stake amount`, async function () {
+    it(`cannot transfer NFT`, async function () {
       // stake 10000 from signer1
-      expect(await farm.stake(NFT_COST * 10))
+      await expect(farm.stake(NFT_COST * 1))
         .to.emit(farm, 'Staked')
-        .withArgs(signer1.address, NFT_COST * 10);
-      // transfer 1 NFT from signer1 to signer2
-      let data = ethers.utils.id("")
-      expect(await memberNFT.safeTransferFrom(signer1.address, signer2.address, NFT_ID, 1, data))
-        .to.emit(memberNFT, 'TransferSingle')
-        .withArgs(signer1.address, signer1.address, signer2.address, NFT_ID, 1);
-      // signer1 balance 9000
-      // signer2 balance 1000
-      expect(await farm.balanceOf(signer1.address)).to.equal(NFT_COST * 9);
-      expect(await farm.balanceOf(signer2.address)).to.equal(NFT_COST);
+        .withArgs(signer1.address, NFT_COST * 1);
+      // have to specify the function as there are two overloaded "safeTransferFrom" functions 
+      const safeTransferFrom = memberNFT['safeTransferFrom(address,address,uint256)']
+      await expect(safeTransferFrom(signer1.address, signer2.address, 0))
+        .to.be.revertedWith("MemberNFT: transfer not allowed")
     });
   });
 });

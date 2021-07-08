@@ -2,32 +2,10 @@
 
 pragma solidity ^0.7.0;
 
-import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Enumerable.sol";
 
-interface IMemberNFT is IERC1155 {
-    function mint(
-        address to,
-        uint256 id,
-        uint256 amount,
-        bytes memory data
-    ) external;
+interface IMemberNFT is IERC721Enumerable {
+    function mint(address to) external;
 
-    function mintBatch(
-        address to,
-        uint256[] memory ids,
-        uint256[] memory amounts,
-        bytes memory data
-    ) external;
-
-    function burn(
-        address account,
-        uint256 id,
-        uint256 amount
-    ) external;
-
-    function burnBatch(
-        address account,
-        uint256[] memory ids,
-        uint256[] memory amounts
-    ) external;
+    function burn(uint256 id) external;
 }
