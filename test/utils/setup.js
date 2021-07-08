@@ -32,10 +32,9 @@ deploy = async () => {
 
   await memberNFT.grantRole(ethers.utils.id("MINTER_ROLE"), farm.address);
   await memberNFT.grantRole(ethers.utils.id("BURNER_ROLE"), farm.address);
-  await memberNFT.setFarms([NFT_ID], [farm.address]);
 
   await farm.grantRole(ethers.utils.id("TRANSFER_ROLE"), memberNFT.address)
-  await farm.setNFTDetails(memberNFT.address, NFT_ID, NFT_COST);
+  await farm.setNFTDetails([memberNFT.address], [NFT_ID], [NFT_COST]);
 
   return { memberToken, memberNFT, farm };
 };

@@ -36,27 +36,52 @@ describe('MemberNFT contract', function () {
     await revertToSnapshot(snapshotId);
   });
 
-  describe('transferStake()', async function () {
+  describe('safeTransferFrom()', async function () {
     beforeEach(async function () {
       expect(await memberToken.approve(farm.address, NFT_COST * 10))
         .to.emit(memberToken, 'Approval')
         .withArgs(signer1.address, farm.address, NFT_COST * 10);
     })
 
-    it(`can transfer 1 NFT and corresponding stake amount`, async function () {
-      // stake 10000 from signer1
-      expect(await farm.stake(NFT_COST * 10))
-        .to.emit(farm, 'Staked')
-        .withArgs(signer1.address, NFT_COST * 10);
-      // transfer 1 NFT from signer1 to signer2
-      let data = ethers.utils.id("")
-      expect(await memberNFT.safeTransferFrom(signer1.address, signer2.address, NFT_ID, 1, data))
-        .to.emit(memberNFT, 'TransferSingle')
-        .withArgs(signer1.address, signer1.address, signer2.address, NFT_ID, 1);
-      // signer1 balance 9000
-      // signer2 balance 1000
-      expect(await farm.balanceOf(signer1.address)).to.equal(NFT_COST * 9);
-      expect(await farm.balanceOf(signer2.address)).to.equal(NFT_COST);
+    it(`should revert`, async function () {
+      let data = ethers.utils.id("");
+      await expect(memberNFT.safeTransferFrom(signer1.address, signer2.address, NFT_ID, 1, data))
+        .to.be.revertedWith("MemberNFT: transfer not allowed")
     });
+  });
+
+  describe('safeBatchTransferFrom()', async function () {
+    beforeEach(async function () {
+      expect(await memberToken.approve(farm.address, NFT_COST * 10))
+        .to.emit(memberToken, 'Approval')
+        .withArgs(signer1.address, farm.address, NFT_COST * 10);
+    })
+
+    it(`should revert`, async function () {
+      let data = ethers.utils.id("");
+      await expect(memberNFT.safeBatchTransferFrom(signer1.address, signer2.address, [NFT_ID], [1], data))
+        .to.be.revertedWith("MemberNFT: transfer not allowed")
+    });
+  });
+
+  describe('mint()', async function () {
+    it('can mint 1 NFT', async function () {
+      let data = ethers.utils.id("")
+      await memberNFT.grantRole(ethers.utils.id("MINTER_ROLE"), signer1.address);
+      await expect(memberNFT.mint(signer1.address, NFT_ID, 1, data)).to.emit(memberNFT, "TransferSingle");
+    })
+
+    it('cannot mint 2 NFTs at once', async function () {
+      let data = ethers.utils.id("")
+      await memberNFT.grantRole(ethers.utils.id("MINTER_ROLE"), signer1.address);
+      await expect(memberNFT.mint(signer1.address, NFT_ID, 2, data)).to.be.revertedWith("MemberNFT: each address can have at most 1 NFT");
+    })
+
+    it('cannot mint 1 NFT twice', async function () {
+      let data = ethers.utils.id("")
+      await memberNFT.grantRole(ethers.utils.id("MINTER_ROLE"), signer1.address);
+      await expect(memberNFT.mint(signer1.address, NFT_ID, 1, data)).to.emit(memberNFT, "TransferSingle");
+      await expect(memberNFT.mint(signer1.address, NFT_ID, 1, data)).to.be.revertedWith("MemberNFT: each address can have at most 1 NFT");
+    })
   });
 });

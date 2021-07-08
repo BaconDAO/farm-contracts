@@ -20,9 +20,13 @@ contract Farm is Ownable, AccessControl {
 
     IERC20 public stakeToken;
     IERC20 public rewardToken;
-    IMemberNFT public memberNFT;
-    uint256 public NFTId; // this ID decides which NFT ID this farm mints/burns
-    uint256 public NFTCost;
+    struct connectedNFT {
+        IMemberNFT memberNFT;
+        uint256 id;
+        uint256 cost;
+    }
+    mapping(uint256 => connectedNFT) public connectedNFTs;
+    uint256 NFTCount;
 
     uint256 public constant DURATION = 14 days;
     uint256 private _totalSupply;
@@ -75,13 +79,16 @@ contract Farm is Ownable, AccessControl {
     }
 
     function setNFTDetails(
-        IMemberNFT _memberNFT,
-        uint256 _NFTId,
-        uint256 _NFTCost
+        IMemberNFT[] memory NFTContracts,
+        uint256[] memory ids,
+        uint256[] memory costs
     ) public onlyOwner {
-        memberNFT = _memberNFT;
-        NFTId = _NFTId;
-        NFTCost = _NFTCost;
+        for (uint256 i = 0; i < NFTContracts.length; i++) {
+            connectedNFTs[i].memberNFT = NFTContracts[i];
+            connectedNFTs[i].cost = costs[i];
+            connectedNFTs[i].id = ids[i];
+        }
+        NFTCount = NFTContracts.length;
     }
 
     function lastTimeRewardApplicable() public view returns (uint256) {
@@ -110,28 +117,37 @@ contract Farm is Ownable, AccessControl {
                 .add(rewards[account]);
     }
 
-    function updateNFTBalance(address account) internal {
-        if (address(memberNFT) != address(0) && NFTCost > 0) {
-            uint256 currentNFTBalance = memberNFT.balanceOf(msg.sender, NFTId);
-            uint256 newNFTBalance = _balances[msg.sender].div(NFTCost);
-
-            if (currentNFTBalance < newNFTBalance) {
-                // mint memberNFT based on new balance
-                bytes memory data;
-                memberNFT.mint(
-                    msg.sender,
-                    NFTId,
-                    newNFTBalance - currentNFTBalance,
-                    data
-                );
-            } else if (currentNFTBalance > newNFTBalance) {
-                // burn memberNFT based on new balance
-                bytes memory data;
-                memberNFT.burn(
-                    msg.sender,
-                    NFTId,
-                    currentNFTBalance - newNFTBalance
-                );
+    function updateNFTBalance() internal {
+        for (uint256 i = 0; i < NFTCount; i++) {
+            IMemberNFT memberNFT = connectedNFTs[i].memberNFT;
+            uint256 cost = connectedNFTs[i].cost;
+            uint256 id = connectedNFTs[i].id;
+            if (address(memberNFT) == address(0) || cost <= 0) {
+                return;
+            }
+            uint256 currentNFTBalance = memberNFT.balanceOf(msg.sender, id);
+            if (_balances[msg.sender] >= (cost)) {
+                // staked balance over threshold, make sure we have exactly 1 NFT
+                if (currentNFTBalance == 0) {
+                    // have 0 right now, mint 1
+                    bytes memory data;
+                    memberNFT.mint(msg.sender, id, 1, data);
+                } else if (currentNFTBalance > 1) {
+                    // have more than 1 right now, burn the extra
+                    memberNFT.burn(msg.sender, id, currentNFTBalance - 1);
+                } else {
+                    // have exactly 1, return
+                    return;
+                }
+            } else {
+                // staked balance fall below threshold, make sure we have 0 NFT
+                if (currentNFTBalance > 0) {
+                    // have more than 0 right now, burn the extra
+                    memberNFT.burn(msg.sender, id, currentNFTBalance);
+                } else {
+                    // have 0, return
+                    return;
+                }
             }
         }
     }
@@ -142,7 +158,7 @@ contract Farm is Ownable, AccessControl {
         _balances[msg.sender] = _balances[msg.sender].add(amount);
         stakeToken.safeTransferFrom(msg.sender, address(this), amount);
         emit Staked(msg.sender, amount);
-        updateNFTBalance(msg.sender);
+        updateNFTBalance();
     }
 
     function unstake(uint256 amount) public updateReward(msg.sender) {
@@ -151,22 +167,7 @@ contract Farm is Ownable, AccessControl {
         _balances[msg.sender] = _balances[msg.sender].sub(amount);
         stakeToken.safeTransfer(msg.sender, amount);
         emit Unstaked(msg.sender, amount);
-        updateNFTBalance(msg.sender);
-    }
-
-    function transferStake(
-        address from,
-        address to,
-        uint256 amount
-    ) external {
-        require(
-            hasRole(TRANSFER_ROLE, _msgSender()),
-            "Farm: must have transfer role to transfer stake"
-        );
-        require(amount > 0, "Cannot transfer 0");
-        _balances[from] = _balances[from].sub(amount);
-        _balances[to] = _balances[to].add(amount);
-        emit Transfered(from, to, amount);
+        updateNFTBalance();
     }
 
     function exit() external {

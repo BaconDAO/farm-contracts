@@ -29,8 +29,6 @@ contract MemberNFT is Context, AccessControl, Ownable, ERC1155 {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
 
-    mapping(uint256 => IFarm) public farmsMap;
-
     /**
      * @dev Grants `DEFAULT_ADMIN_ROLE` to the account that deploys the contract.
      */
@@ -38,15 +36,6 @@ contract MemberNFT is Context, AccessControl, Ownable, ERC1155 {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _setRoleAdmin(MINTER_ROLE, DEFAULT_ADMIN_ROLE);
         _setRoleAdmin(BURNER_ROLE, DEFAULT_ADMIN_ROLE);
-    }
-
-    function setFarms(uint256[] memory ids, address[] memory farms)
-        public
-        onlyOwner
-    {
-        for (uint256 i = 0; i < ids.length; i++) {
-            farmsMap[ids[i]] = IFarm(farms[i]);
-        }
     }
 
     /**
@@ -68,6 +57,10 @@ contract MemberNFT is Context, AccessControl, Ownable, ERC1155 {
             hasRole(MINTER_ROLE, _msgSender()),
             "MemberNFT: must have minter role to mint"
         );
+        require(
+            amount <= 1 && balanceOf(to, id) < 1,
+            "MemberNFT: each address can have at most 1 NFT"
+        );
 
         _mint(to, id, amount, data);
     }
@@ -85,7 +78,12 @@ contract MemberNFT is Context, AccessControl, Ownable, ERC1155 {
             hasRole(MINTER_ROLE, _msgSender()),
             "MemberNFT: must have minter role to mint"
         );
-
+        for (uint256 i = 0; i < ids.length; i++) {
+            require(
+                balanceOf(to, ids[i]) < 1,
+                "MemberNFT: each address can have at most 1 NFT"
+            );
+        }
         _mintBatch(to, ids, amounts, data);
     }
 
@@ -127,25 +125,23 @@ contract MemberNFT is Context, AccessControl, Ownable, ERC1155 {
         _burnBatch(account, ids, amounts);
     }
 
-    function _beforeTokenTransfer(
-        address operator,
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 id,
+        uint256 amount,
+        bytes memory data
+    ) public virtual override(ERC1155) {
+        revert("MemberNFT: transfer not allowed");
+    }
+
+    function safeBatchTransferFrom(
         address from,
         address to,
         uint256[] memory ids,
         uint256[] memory amounts,
-        bytes memory data
-    ) internal override(ERC1155) {
-        if (from != address(0) && to != address(0)) {
-            for (uint256 i = 0; i < ids.length; i++) {
-                if (address(farmsMap[i]) != address(0)) {
-                    uint256 NFTCost = farmsMap[i].NFTCost();
-                    farmsMap[i].transferStake(
-                        from,
-                        to,
-                        amounts[i].mul(NFTCost)
-                    );
-                }
-            }
-        }
+        bytes memory dat
+    ) public virtual override(ERC1155) {
+        revert("MemberNFT: transfer not allowed");
     }
 }

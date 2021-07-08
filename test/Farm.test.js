@@ -59,19 +59,23 @@ describe('Farm contract', function () {
       let balanceAfter = await memberToken.balanceOf(signer1.address);
       let amountDeducted = balanceBefore.sub(balanceAfter);
       expect(amountDeducted).to.equal(NFT_COST - 1);
-      expect(await memberNFT.balanceOf(signer1.address, 0)).to.equal(0);
+      expect(await memberNFT.balanceOf(signer1.address, NFT_ID)).to.equal(0);
     });
 
     it(`can stake enough tokens to mint 1 NFT`, async function () {
+      expect(await memberNFT.balanceOf(signer1.address, NFT_ID)).to.equal(0);
       expect(await farm.stake(NFT_COST))
         .to.emit(memberNFT, 'TransferSingle')
-        .withArgs(farm.address, ethers.constants.AddressZero, signer1.address, 0, 1);
+        .withArgs(farm.address, ethers.constants.AddressZero, signer1.address, NFT_ID, 1);
+      expect(await memberNFT.balanceOf(signer1.address, NFT_ID)).to.equal(1);
     });
 
-    it(`can stake enough tokens to mint 5 NFT`, async function () {
+    it(`can stake 5 times the amount and mint 1 NFT`, async function () {
+      expect(await memberNFT.balanceOf(signer1.address, NFT_ID)).to.equal(0);
       expect(await farm.stake(NFT_COST * 5))
         .to.emit(memberNFT, 'TransferSingle')
-        .withArgs(farm.address, ethers.constants.AddressZero, signer1.address, 0, 5);
+        .withArgs(farm.address, ethers.constants.AddressZero, signer1.address, NFT_ID, 1);
+      expect(await memberNFT.balanceOf(signer1.address, NFT_ID)).to.equal(1);
     });
   });
 
@@ -98,35 +102,32 @@ describe('Farm contract', function () {
 
     it(`can unstake tokens to burn 1 NFT`, async function () {
       // stake 10000
-      expect(await farm.stake(NFT_COST * 10))
+      expect(await farm.stake(NFT_COST))
         .to.emit(farm, 'Staked')
-        .withArgs(signer1.address, NFT_COST * 10);
-      // balance of 10 NFTs left
-      expect(await memberNFT.balanceOf(signer1.address, NFT_ID)).to.equal(10);
+        .withArgs(signer1.address, NFT_COST);
+      // balance of 1 NFT
+      expect(await memberNFT.balanceOf(signer1.address, NFT_ID)).to.equal(1);
 
-      // unstake 1000, should show burning of 1 NFT
+      // unstake 100, should show burning of 1 NFT
       expect(await farm.unstake(NFT_COST))
         .to.emit(memberNFT, 'TransferSingle')
         .withArgs(farm.address, signer1.address, ethers.constants.AddressZero, NFT_ID, 1);
-      // balance of 9 NFTs left
-      expect(await memberNFT.balanceOf(signer1.address, NFT_ID)).to.equal(9);
+      // balance of 0 NFTs left
+      expect(await memberNFT.balanceOf(signer1.address, NFT_ID)).to.equal(0);
     });
 
-    it(`can unstake tokens to burn 5 NFT`, async function () {
+    it(`can stake 10x tokens and unstake 5x tokens to not affect NFT balance`, async function () {
       // stake 10000
       expect(await farm.stake(NFT_COST * 10))
         .to.emit(farm, 'Staked')
         .withArgs(signer1.address, NFT_COST * 10);
-      // balance of 10 NFTs left
-      expect(await memberNFT.balanceOf(signer1.address, NFT_ID)).to.equal(10);
+      // balance of 1 NFTs left
+      expect(await memberNFT.balanceOf(signer1.address, NFT_ID)).to.equal(1);
 
-      // unstake 1000, should show burning of 5 NFT
+      // unstake 5000, should not burn any NFTs
       expect(await farm.unstake(NFT_COST * 5))
-        .to.emit(memberNFT, 'TransferSingle')
-        .withArgs(farm.address, signer1.address, ethers.constants.AddressZero, NFT_ID, 5);
-      // balance of 5 NFTs left
-      expect(await memberNFT.balanceOf(signer1.address, NFT_ID)).to.equal(5);
+      // balance of 1 NFTs left
+      expect(await memberNFT.balanceOf(signer1.address, NFT_ID)).to.equal(1);
     });
   });
-  // tested upto here
 });
