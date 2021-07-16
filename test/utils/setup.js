@@ -7,8 +7,8 @@ const MEMBER_TOKEN_SYMBOL = 'MEMBER';
 const MEMBER_TOKEN_TOTAL_SUPPLY = BigNumber.from(10000000).mul(ethers.constants.WeiPerEther);
 
 const URI = 'http://localhost:3000';
-const NFT_COST = 1000;
-const NFT_ID = 0;
+const NFT_COSTS = [1000, 5000, 10000];
+const NFT_IDS = [0, 1, 2];
 
 deploy = async () => {
   memberTokenFactory = await ethers.getContractFactory('MemberToken');
@@ -34,7 +34,7 @@ deploy = async () => {
   await memberNFT.grantRole(ethers.utils.id("BURNER_ROLE"), farm.address);
 
   await farm.grantRole(ethers.utils.id("TRANSFER_ROLE"), memberNFT.address)
-  await farm.setNFTDetails([memberNFT.address], [NFT_ID], [NFT_COST]);
+  await farm.setNFTDetails([memberNFT.address, memberNFT.address, memberNFT.address], NFT_IDS, NFT_COSTS);
 
   return { memberToken, memberNFT, farm };
 };
@@ -42,6 +42,6 @@ deploy = async () => {
 module.exports = {
   deploy,
   URI,
-  NFT_COST,
-  NFT_ID
+  NFT_COSTS,
+  NFT_IDS
 };
