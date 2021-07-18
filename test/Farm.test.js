@@ -13,7 +13,7 @@ const {
 } = require('./utils/utils.js');
 const { BigNumber } = ethers;
 
-describe('Farm contract', function () {
+describe('farm1 contract', function () {
 
   // reward period duration is 14 days = 1210000 seconds
   // reward amount divided by duration in seconds equals rewardRate
@@ -26,10 +26,10 @@ describe('Farm contract', function () {
 
     snapshotId = await takeSnapshot();
 
-    const { memberToken, memberNFT, farm } = await deploy();
+    const { memberToken, memberNFT, farm1, farm2 } = await deploy();
 
     // set signer1 as the rewardDistributionManager, who can add additional rewards
-    await farm.setRewardDistribution(signer1.address);
+    await farm1.setRewardDistribution(signer1.address);
   });
 
   afterEach(async () => {
@@ -38,26 +38,33 @@ describe('Farm contract', function () {
 
   describe('notifyRewardAmount()', async function () {
     it(`can assign first reward amount`, async function () {
-      expect(await memberToken.transfer(farm.address, ONE_THOUSAND_PER_SECOND));
-      expect(await farm.notifyRewardAmount(ONE_THOUSAND_PER_SECOND));
-      expect(await farm.rewardRate()).to.equal(1000);
+      expect(await memberToken.transfer(farm1.address, ONE_THOUSAND_PER_SECOND));
+      expect(await farm1.notifyRewardAmount(ONE_THOUSAND_PER_SECOND));
+      expect(await farm1.rewardRate()).to.equal(1000);
     });
   });
 
   describe('stake()', async function () {
     beforeEach(async function () {
-      await expect(memberToken.approve(farm.address, NFT_COSTS[2] * 10))
+      await memberToken.transfer(signer2.address, NFT_COSTS[2] * 30);
+      await expect(memberToken.approve(farm1.address, NFT_COSTS[2] * 10))
         .to.emit(memberToken, 'Approval')
-        .withArgs(signer1.address, farm.address, NFT_COSTS[2] * 10);
+        .withArgs(signer1.address, farm1.address, NFT_COSTS[2] * 10);
+      await expect(memberToken.approve(farm2.address, NFT_COSTS[2] * 10))
+        .to.emit(memberToken, 'Approval')
+        .withArgs(signer1.address, farm2.address, NFT_COSTS[2] * 10);
+      await expect(memberToken.connect(signer2).approve(farm2.address, NFT_COSTS[2] * 10))
+        .to.emit(memberToken, 'Approval')
+        .withArgs(signer2.address, farm2.address, NFT_COSTS[2] * 10);
     })
     it(`can stake tokens and record correct amount`, async function () {
       let cost = NFT_COSTS[0];
       let id = NFT_IDS[0]
       let balanceBefore = await memberToken.balanceOf(signer1.address);
-      expect(await farm.stake(cost - 1))
-        .to.emit(farm, 'Staked')
+      expect(await farm1.stake(cost - 1))
+        .to.emit(farm1, 'Staked')
         .withArgs(signer1.address, cost - 1);
-      expect(await farm.balanceOf(signer1.address)).to.equal(cost - 1);
+      expect(await farm1.balanceOf(signer1.address)).to.equal(cost - 1);
       let balanceAfter = await memberToken.balanceOf(signer1.address);
       let amountDeducted = balanceBefore.sub(balanceAfter);
       expect(amountDeducted).to.equal(cost - 1);
@@ -68,9 +75,9 @@ describe('Farm contract', function () {
       let cost = NFT_COSTS[0]
       let id = NFT_IDS[0]
       expect(await memberNFT.balanceOf(signer1.address, id)).to.equal(0);
-      expect(await farm.stake(cost))
+      expect(await farm1.stake(cost))
         .to.emit(memberNFT, 'TransferSingle')
-        .withArgs(farm.address, ethers.constants.AddressZero, signer1.address, id, 1);
+        .withArgs(farm1.address, ethers.constants.AddressZero, signer1.address, id, 1);
       expect(await memberNFT.balanceOf(signer1.address, id)).to.equal(1);
     });
 
@@ -78,9 +85,9 @@ describe('Farm contract', function () {
       let cost = NFT_COSTS[0]
       let id = NFT_IDS[0]
       expect(await memberNFT.balanceOf(signer1.address, id)).to.equal(0);
-      expect(await farm.stake(cost * 4))
+      expect(await farm1.stake(cost * 4))
         .to.emit(memberNFT, 'TransferSingle')
-        .withArgs(farm.address, ethers.constants.AddressZero, signer1.address, id, 1);
+        .withArgs(farm1.address, ethers.constants.AddressZero, signer1.address, id, 1);
       expect(await memberNFT.balanceOf(signer1.address, id)).to.equal(1);
     });
 
@@ -90,9 +97,9 @@ describe('Farm contract', function () {
       let id_1 = NFT_IDS[1]
       expect(await memberNFT.balanceOf(signer1.address, id_0)).to.equal(0);
       expect(await memberNFT.balanceOf(signer1.address, id_1)).to.equal(0);
-      expect(await farm.stake(cost))
+      expect(await farm1.stake(cost))
         .to.emit(memberNFT, 'TransferSingle')
-        .withArgs(farm.address, ethers.constants.AddressZero, signer1.address, id_1, 1);
+        .withArgs(farm1.address, ethers.constants.AddressZero, signer1.address, id_1, 1);
       expect(await memberNFT.balanceOf(signer1.address, id_0)).to.equal(1);
       expect(await memberNFT.balanceOf(signer1.address, id_1)).to.equal(1);
     });
@@ -105,50 +112,75 @@ describe('Farm contract', function () {
       expect(await memberNFT.balanceOf(signer1.address, id_0)).to.equal(0);
       expect(await memberNFT.balanceOf(signer1.address, id_1)).to.equal(0);
       expect(await memberNFT.balanceOf(signer1.address, id_2)).to.equal(0);
-      expect(await farm.stake(cost))
+      expect(await farm1.stake(cost))
         .to.emit(memberNFT, 'TransferSingle')
-        .withArgs(farm.address, ethers.constants.AddressZero, signer1.address, id_2, 1);
+        .withArgs(farm1.address, ethers.constants.AddressZero, signer1.address, id_2, 1);
       expect(await memberNFT.balanceOf(signer1.address, id_0)).to.equal(1);
       expect(await memberNFT.balanceOf(signer1.address, id_1)).to.equal(1);
       expect(await memberNFT.balanceOf(signer1.address, id_2)).to.equal(1);
+    });
+    it(`can stake enough tokens in farm1 and farm2 to mint 2 NFTs of id=0 for 2 addresses`, async function () {
+      let cost = NFT_COSTS[0]
+      let id = NFT_IDS[0]
+      expect(await memberNFT.balanceOf(signer1.address, id)).to.equal(0);
+      expect(await farm1.stake(cost))
+        .to.emit(memberNFT, 'TransferSingle')
+        .withArgs(farm1.address, ethers.constants.AddressZero, signer1.address, id, 1);
+      expect(await memberNFT.balanceOf(signer1.address, id)).to.equal(1);
+      expect(await memberNFT.balanceOf(signer2.address, id)).to.equal(0);
+      expect(await farm2.connect(signer2).stake(cost))
+        .to.emit(memberNFT, 'TransferSingle')
+        .withArgs(farm2.address, ethers.constants.AddressZero, signer2.address, id, 1);
+      expect(await memberNFT.balanceOf(signer2.address, id)).to.equal(1);
+    });
+    it(`can stake enough tokens in farm1 and farm2 for same address but only mint 1 NFT maximum`, async function () {
+      let cost = NFT_COSTS[0]
+      let id = NFT_IDS[0]
+      expect(await memberNFT.balanceOf(signer1.address, id)).to.equal(0);
+      expect(await farm1.stake(cost))
+        .to.emit(memberNFT, 'TransferSingle')
+        .withArgs(farm1.address, ethers.constants.AddressZero, signer1.address, id, 1);
+      expect(await memberNFT.balanceOf(signer1.address, id)).to.equal(1);
+      expect(await farm2.stake(cost));
+      expect(await memberNFT.balanceOf(signer1.address, id)).to.equal(1);
     });
   });
 
   describe('unstake()', async function () {
     beforeEach(async function () {
-      expect(await memberToken.approve(farm.address, NFT_COSTS[2] * 10))
+      expect(await memberToken.approve(farm1.address, NFT_COSTS[2] * 10))
         .to.emit(memberToken, 'Approval')
-        .withArgs(signer1.address, farm.address, NFT_COSTS[2] * 10);
+        .withArgs(signer1.address, farm1.address, NFT_COSTS[2] * 10);
     })
 
     it(`can unstake tokens and record correct amount`, async function () {
       let cost = NFT_COSTS[0]
       // stake 2000
-      expect(await farm.stake(cost * 2))
-        .to.emit(farm, 'Staked')
+      expect(await farm1.stake(cost * 2))
+        .to.emit(farm1, 'Staked')
         .withArgs(signer1.address, cost * 2);
       // unstake 1000
-      expect(await farm.unstake(cost))
-        .to.emit(farm, 'Unstaked')
+      expect(await farm1.unstake(cost))
+        .to.emit(farm1, 'Unstaked')
         .withArgs(signer1.address, cost);
       // balance 1000
-      expect(await farm.balanceOf(signer1.address)).to.equal(cost);
+      expect(await farm1.balanceOf(signer1.address)).to.equal(cost);
     });
 
     it(`can unstake tokens to burn 1 NFT`, async function () {
       let cost = NFT_COSTS[0]
       let id = NFT_IDS[0]
       // stake 1000
-      expect(await farm.stake(cost))
-        .to.emit(farm, 'Staked')
+      expect(await farm1.stake(cost))
+        .to.emit(farm1, 'Staked')
         .withArgs(signer1.address, cost);
       // balance of 1 NFT
       expect(await memberNFT.balanceOf(signer1.address, id)).to.equal(1);
 
       // unstake 500, should show burning of 1 NFT
-      expect(await farm.unstake(cost * 0.5))
+      expect(await farm1.unstake(cost * 0.5))
         .to.emit(memberNFT, 'TransferSingle')
-        .withArgs(farm.address, signer1.address, ethers.constants.AddressZero, id, 1);
+        .withArgs(farm1.address, signer1.address, ethers.constants.AddressZero, id, 1);
       // balance of 0 NFTs left
       expect(await memberNFT.balanceOf(signer1.address, id)).to.equal(0);
     });
@@ -157,14 +189,14 @@ describe('Farm contract', function () {
       let cost = NFT_COSTS[0]
       let id = NFT_IDS[0]
       // stake 2000
-      expect(await farm.stake(cost * 2))
-        .to.emit(farm, 'Staked')
+      expect(await farm1.stake(cost * 2))
+        .to.emit(farm1, 'Staked')
         .withArgs(signer1.address, cost * 2);
       // balance of 1 NFTs left
       expect(await memberNFT.balanceOf(signer1.address, id)).to.equal(1);
 
       // unstake 5000, should not burn any NFTs
-      expect(await farm.unstake(cost))
+      expect(await farm1.unstake(cost))
       // balance of 1 NFTs left
       expect(await memberNFT.balanceOf(signer1.address, id)).to.equal(1);
     });

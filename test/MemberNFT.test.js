@@ -26,10 +26,10 @@ describe('MemberNFT contract', function () {
 
     snapshotId = await takeSnapshot();
 
-    const { memberToken, memberNFT, farm } = await deploy();
+    const { memberToken, memberNFT, farm1 } = await deploy();
 
     // set signer1 as the rewardDistributionManager, who can add additional rewards
-    await farm.setRewardDistribution(signer1.address);
+    await farm1.setRewardDistribution(signer1.address);
   });
 
   afterEach(async () => {
@@ -38,9 +38,9 @@ describe('MemberNFT contract', function () {
 
   describe('safeTransferFrom()', async function () {
     beforeEach(async function () {
-      expect(await memberToken.approve(farm.address, NFT_COSTS[2] * 10))
+      expect(await memberToken.approve(farm1.address, NFT_COSTS[2] * 10))
         .to.emit(memberToken, 'Approval')
-        .withArgs(signer1.address, farm.address, NFT_COSTS[2] * 10);
+        .withArgs(signer1.address, farm1.address, NFT_COSTS[2] * 10);
     })
 
     it(`should revert`, async function () {
@@ -53,9 +53,9 @@ describe('MemberNFT contract', function () {
 
   describe('safeBatchTransferFrom()', async function () {
     beforeEach(async function () {
-      expect(await memberToken.approve(farm.address, NFT_COSTS[2] * 10))
+      expect(await memberToken.approve(farm1.address, NFT_COSTS[2] * 10))
         .to.emit(memberToken, 'Approval')
-        .withArgs(signer1.address, farm.address, NFT_COSTS[2] * 10);
+        .withArgs(signer1.address, farm1.address, NFT_COSTS[2] * 10);
     })
 
     it(`should revert`, async function () {
@@ -78,15 +78,20 @@ describe('MemberNFT contract', function () {
       let id = NFT_IDS[0]
       let data = ethers.utils.id("")
       await memberNFT.grantRole(ethers.utils.id("MINTER_ROLE"), signer1.address);
-      await expect(memberNFT.mint(signer1.address, id, 2, data)).to.be.revertedWith("MemberNFT: each address can have at most 1 NFT");
+      expect(await memberNFT.balanceOf(signer1.address, id)).to.equal(0);
+      await memberNFT.mint(signer1.address, id, 2, data);
+      expect(await memberNFT.balanceOf(signer1.address, id)).to.equal(0);
     })
 
     it('cannot mint 1 NFT twice', async function () {
       let id = NFT_IDS[0]
       let data = ethers.utils.id("")
       await memberNFT.grantRole(ethers.utils.id("MINTER_ROLE"), signer1.address);
+      expect(await memberNFT.balanceOf(signer1.address, id)).to.equal(0);
       await expect(memberNFT.mint(signer1.address, id, 1, data)).to.emit(memberNFT, "TransferSingle");
-      await expect(memberNFT.mint(signer1.address, id, 1, data)).to.be.revertedWith("MemberNFT: each address can have at most 1 NFT");
+      expect(await memberNFT.balanceOf(signer1.address, id)).to.equal(1);
+      await memberNFT.mint(signer1.address, id, 1, data);
+      expect(await memberNFT.balanceOf(signer1.address, id)).to.equal(1);
     })
   });
 });

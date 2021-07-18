@@ -26,17 +26,25 @@ deploy = async () => {
   await memberNFT.deployed();
 
   farmFactory = await ethers.getContractFactory('Farm');
-  // simple deployment of farm and rewarding the same token (ie. BACON)
-  farm = await farmFactory.deploy(memberToken.address, memberToken.address);
-  await farm.deployed()
+  // farm1 should be BACON token farm
+  farm1 = await farmFactory.deploy(memberToken.address, memberToken.address);
+  await farm1.deployed()
+  // farm2 should be BACON-LP token farm
+  farm2 = await farmFactory.deploy(memberToken.address, memberToken.address);
+  await farm2.deployed()
 
-  await memberNFT.grantRole(ethers.utils.id("MINTER_ROLE"), farm.address);
-  await memberNFT.grantRole(ethers.utils.id("BURNER_ROLE"), farm.address);
+  await memberNFT.grantRole(ethers.utils.id("MINTER_ROLE"), farm1.address);
+  await memberNFT.grantRole(ethers.utils.id("BURNER_ROLE"), farm1.address);
+  await memberNFT.grantRole(ethers.utils.id("MINTER_ROLE"), farm2.address);
+  await memberNFT.grantRole(ethers.utils.id("BURNER_ROLE"), farm2.address);
 
-  await farm.grantRole(ethers.utils.id("TRANSFER_ROLE"), memberNFT.address)
-  await farm.setNFTDetails([memberNFT.address, memberNFT.address, memberNFT.address], NFT_IDS, NFT_COSTS);
+  await farm1.grantRole(ethers.utils.id("TRANSFER_ROLE"), memberNFT.address)
+  await farm1.setNFTDetails([memberNFT.address, memberNFT.address, memberNFT.address], NFT_IDS, NFT_COSTS);
 
-  return { memberToken, memberNFT, farm };
+  await farm2.grantRole(ethers.utils.id("TRANSFER_ROLE"), memberNFT.address)
+  await farm2.setNFTDetails([memberNFT.address, memberNFT.address, memberNFT.address], NFT_IDS, NFT_COSTS);
+
+  return { memberToken, memberNFT, farm1, farm2 };
 };
 
 module.exports = {
