@@ -57,12 +57,11 @@ contract MemberNFT is Context, AccessControl, Ownable, ERC1155 {
             hasRole(MINTER_ROLE, _msgSender()),
             "MemberNFT: must have minter role to mint"
         );
-        require(
-            amount <= 1 && balanceOf(to, id) < 1,
-            "MemberNFT: each address can have at most 1 NFT"
-        );
-
-        _mint(to, id, amount, data);
+        // only mint if the amount to mint is less than or equal to 1, and the current balance is 0
+        // this allows multiple farms to stake and attempt to mint NFT without reverting
+        if (amount <= 1 && balanceOf(to, id) == 0) {
+            _mint(to, id, amount, data);
+        }
     }
 
     /**
@@ -79,12 +78,13 @@ contract MemberNFT is Context, AccessControl, Ownable, ERC1155 {
             "MemberNFT: must have minter role to mint"
         );
         for (uint256 i = 0; i < ids.length; i++) {
-            require(
-                balanceOf(to, ids[i]) < 1,
-                "MemberNFT: each address can have at most 1 NFT"
-            );
+            // loop through all mints of batch
+            // only mint if the amount to mint is less than or equal to 1, and the current balance is 0
+            // this allows multiple farms to stake and attempt to mint NFT without reverting
+            if (amounts[i] <= 1 && balanceOf(to, ids[i]) == 0) {
+                _mint(to, ids[i], amounts[i], data);
+            }
         }
-        _mintBatch(to, ids, amounts, data);
     }
 
     /**
