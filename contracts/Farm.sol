@@ -16,8 +16,6 @@ contract Farm is Ownable, AccessControl {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    bytes32 public constant TRANSFER_ROLE = keccak256("TRANSFER_ROLE");
-
     IERC20 public stakeToken;
     IERC20 public rewardToken;
     struct connectedNFT {
@@ -72,7 +70,6 @@ contract Farm is Ownable, AccessControl {
 
     constructor(IERC20 _stakeToken, IERC20 _rewardToken) {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
-        _setRoleAdmin(TRANSFER_ROLE, DEFAULT_ADMIN_ROLE);
 
         stakeToken = _stakeToken;
         rewardToken = _rewardToken;
