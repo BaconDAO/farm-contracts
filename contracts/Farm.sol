@@ -24,7 +24,7 @@ contract Farm is Ownable, AccessControl {
         uint256 cost;
     }
     mapping(uint256 => connectedNFT) public connectedNFTs;
-    uint256 NFTCount;
+    uint256 public NFTCount;
 
     uint256 public constant DURATION = 14 days;
     uint256 private _totalSupply;
