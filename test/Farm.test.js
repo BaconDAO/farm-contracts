@@ -18,8 +18,9 @@ describe('farm1 contract', function () {
   // reward period duration is 14 days = 1210000 seconds
   // reward amount divided by duration in seconds equals rewardRate
   // This should give us a reward rate of 1000 tokens per second
-  const SECONDS_IN_DURATION = BigNumber.from(1210000)
-  const ONE_THOUSAND_PER_SECOND = SECONDS_IN_DURATION.mul(1000);
+  const DURATION_IN_SECONDS = 1210000
+  const DURATION_IN_BN = BigNumber.from(DURATION_IN_SECONDS)
+  const REWARD_FOR_DURATION = DURATION_IN_BN.mul(1000);
 
   beforeEach(async function () {
     [signer1, signer2, signer3] = await ethers.getSigners();
@@ -37,10 +38,33 @@ describe('farm1 contract', function () {
   });
 
   describe('notifyRewardAmount()', async function () {
-    it(`can assign first reward amount`, async function () {
-      expect(await memberToken.transfer(farm1.address, ONE_THOUSAND_PER_SECOND));
-      expect(await farm1.notifyRewardAmount(ONE_THOUSAND_PER_SECOND));
+    beforeEach(async function () {
+      // add 1000 reward
+      expect(await memberToken.transfer(farm1.address, REWARD_FOR_DURATION));
+      expect(await farm1.notifyRewardAmount(REWARD_FOR_DURATION));
       expect(await farm1.rewardRate()).to.equal(1000);
+      await expect(memberToken.approve(farm1.address, 1000))
+        .to.emit(memberToken, 'Approval')
+        .withArgs(signer1.address, farm1.address, 1000);
+    });
+
+    it(`can stake and claim reward`, async function () {
+      let currentTimetamp = (await ethers.getDefaultProvider().getBlock()).timestamp;
+
+      expect(await farm1.stake(1000))
+        .to.emit(farm1, 'Staked')
+        .withArgs(signer1.address, 1000);
+
+      let balance1 = await memberToken.balanceOf(signer1.address);
+
+      await setNextBlockTimestamp(currentTimetamp + DURATION_IN_SECONDS)
+
+      expect(await farm1.getReward())
+
+      let balance2 = await memberToken.balanceOf(signer1.address);
+
+      console.log("expected reward amount for period: ", REWARD_FOR_DURATION.toString())
+      console.log("actual reward amount received: ", balance2.sub(balance1).toString())
     });
   });
 
