@@ -120,7 +120,8 @@ contract Farm is Ownable, AccessControl {
             uint256 cost = connectedNFTs[i].cost;
             uint256 id = connectedNFTs[i].id;
             if (address(memberNFT) == address(0) || cost <= 0) {
-                return;
+                // NFT or cost not defined, skip id
+                continue;
             }
             uint256 currentNFTBalance = memberNFT.balanceOf(msg.sender, id);
             if (_balances[msg.sender] >= (cost)) {
@@ -133,8 +134,8 @@ contract Farm is Ownable, AccessControl {
                     // have more than 1 right now, burn the extra
                     memberNFT.burn(msg.sender, id, currentNFTBalance - 1);
                 } else {
-                    // have exactly 1, return
-                    return;
+                    // have exactly 1, skip id
+                    continue;
                 }
             } else {
                 // staked balance fall below threshold, make sure we have 0 NFT
@@ -142,8 +143,8 @@ contract Farm is Ownable, AccessControl {
                     // have more than 0 right now, burn the extra
                     memberNFT.burn(msg.sender, id, currentNFTBalance);
                 } else {
-                    // have 0, return
-                    return;
+                    // have 0, skip id
+                    continue;
                 }
             }
         }

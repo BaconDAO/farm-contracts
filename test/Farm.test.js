@@ -143,6 +143,7 @@ describe('farm1 contract', function () {
       expect(await memberNFT.balanceOf(signer1.address, id_1)).to.equal(1);
       expect(await memberNFT.balanceOf(signer1.address, id_2)).to.equal(1);
     });
+
     it(`can stake enough tokens in farm1 and farm2 to mint 2 NFTs of id=0 for 2 addresses`, async function () {
       let cost = NFT_COSTS[0]
       let id = NFT_IDS[0]
@@ -157,6 +158,7 @@ describe('farm1 contract', function () {
         .withArgs(farm2.address, ethers.constants.AddressZero, signer2.address, id, 1);
       expect(await memberNFT.balanceOf(signer2.address, id)).to.equal(1);
     });
+
     it(`can stake enough tokens in farm1 and farm2 for same address but only mint 1 NFT maximum`, async function () {
       let cost = NFT_COSTS[0]
       let id = NFT_IDS[0]
@@ -167,6 +169,24 @@ describe('farm1 contract', function () {
       expect(await memberNFT.balanceOf(signer1.address, id)).to.equal(1);
       expect(await farm2.stake(cost));
       expect(await memberNFT.balanceOf(signer1.address, id)).to.equal(1);
+    });
+
+    it(`can stake enough and mint for NFT id=0 first, then stake more to mint NFT id=1`, async function () {
+      let cost1 = NFT_COSTS[0]
+      let id1 = NFT_IDS[0]
+      expect(await memberNFT.balanceOf(signer1.address, id1)).to.equal(0);
+      expect(await farm1.stake(cost1))
+        .to.emit(memberNFT, 'TransferSingle')
+        .withArgs(farm1.address, ethers.constants.AddressZero, signer1.address, id1, 1);
+      expect(await memberNFT.balanceOf(signer1.address, id1)).to.equal(1);
+
+      let cost2 = NFT_COSTS[1]
+      let id2 = NFT_IDS[1]
+      expect(await memberNFT.balanceOf(signer1.address, id2)).to.equal(0);
+      expect(await farm1.stake(cost2 - cost1))
+        .to.emit(memberNFT, 'TransferSingle')
+        .withArgs(farm1.address, ethers.constants.AddressZero, signer1.address, id2, 1);
+      expect(await memberNFT.balanceOf(signer1.address, id2)).to.equal(1);
     });
   });
 
