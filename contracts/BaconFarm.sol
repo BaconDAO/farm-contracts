@@ -9,9 +9,8 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IMemberNFT.sol";
-import "hardhat/console.sol";
 
-contract Farm is Ownable, AccessControl {
+contract BaconFarm is Ownable, AccessControl {
     // this contract lets users stake/unstake ERC20 tokens and mints/burns ERC1155 tokens that represent their stake/membership
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
