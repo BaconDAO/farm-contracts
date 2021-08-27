@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IMemberNFT.sol";
 
-contract BaconFarm is Ownable, AccessControl {
+contract Farm is Ownable, AccessControl {
     // this contract lets users stake/unstake ERC20 tokens and mints/burns ERC1155 tokens that represent their stake/membership
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -79,6 +79,10 @@ contract BaconFarm is Ownable, AccessControl {
         uint256[] memory ids,
         uint256[] memory costs
     ) public onlyOwner {
+        require(
+            NFTContracts.length == ids.length && ids.length == costs.length,
+            "Farm: setNFTDetails input arrays need to have same length"
+        );
         for (uint256 i = 0; i < NFTContracts.length; i++) {
             connectedNFTs[i].memberNFT = NFTContracts[i];
             connectedNFTs[i].cost = costs[i];

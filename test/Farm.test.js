@@ -37,6 +37,19 @@ describe('farm1 contract', function () {
     await revertToSnapshot(snapshotId);
   });
 
+  describe('setNFTDetails()', async function () {
+
+    it(`cannot set NFT details with arrays of different length`, async function () {
+      await expect(farm1.setNFTDetails([memberNFT.address, memberNFT.address, memberNFT.address], [0, 1], [100, 100, 100]))
+        .to.be.revertedWith("Farm: setNFTDetails input arrays need to have same length")
+
+      await expect(farm1.setNFTDetails([memberNFT.address, memberNFT.address, memberNFT.address], [0, 1, 2], [100, 100]))
+        .to.be.revertedWith("Farm: setNFTDetails input arrays need to have same length")
+
+      await farm1.setNFTDetails([memberNFT.address, memberNFT.address, memberNFT.address], [0, 1, 2], [100, 100, 100])
+    });
+  });
+
   describe('notifyRewardAmount()', async function () {
     beforeEach(async function () {
       // add 1000 reward
