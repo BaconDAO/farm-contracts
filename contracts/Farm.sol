@@ -190,6 +190,10 @@ contract Farm is Ownable, AccessControl {
         onlyRewardDistribution
         updateReward(address(0))
     {
+        require(
+            reward < uint256(-1) / 10**22,
+            "Farm: rewards too large, would lock"
+        );
         if (block.timestamp >= periodFinish) {
             rewardRate = reward.div(DURATION);
         } else {
