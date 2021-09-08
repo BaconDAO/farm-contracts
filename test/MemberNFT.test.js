@@ -73,25 +73,5 @@ describe('MemberNFT contract', function () {
       await memberNFT.grantRole(ethers.utils.id("MINTER_ROLE"), signer1.address);
       await expect(memberNFT.mint(signer1.address, id, 1, data)).to.emit(memberNFT, "TransferSingle");
     })
-
-    it('cannot mint 2 NFTs at once', async function () {
-      let id = NFT_IDS[0]
-      let data = ethers.utils.id("")
-      await memberNFT.grantRole(ethers.utils.id("MINTER_ROLE"), signer1.address);
-      expect(await memberNFT.balanceOf(signer1.address, id)).to.equal(0);
-      await memberNFT.mint(signer1.address, id, 2, data);
-      expect(await memberNFT.balanceOf(signer1.address, id)).to.equal(0);
-    })
-
-    it('cannot mint 1 NFT twice', async function () {
-      let id = NFT_IDS[0]
-      let data = ethers.utils.id("")
-      await memberNFT.grantRole(ethers.utils.id("MINTER_ROLE"), signer1.address);
-      expect(await memberNFT.balanceOf(signer1.address, id)).to.equal(0);
-      await expect(memberNFT.mint(signer1.address, id, 1, data)).to.emit(memberNFT, "TransferSingle");
-      expect(await memberNFT.balanceOf(signer1.address, id)).to.equal(1);
-      await memberNFT.mint(signer1.address, id, 1, data);
-      expect(await memberNFT.balanceOf(signer1.address, id)).to.equal(1);
-    })
   });
 });

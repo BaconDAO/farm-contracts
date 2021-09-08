@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.7.0;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
@@ -10,7 +9,7 @@ import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IMemberNFT.sol";
 
-contract Farm is Ownable, AccessControl {
+contract Farm is Ownable {
     // this contract lets users stake/unstake ERC20 tokens and mints/burns ERC1155 tokens that represent their stake/membership
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -68,8 +67,6 @@ contract Farm is Ownable, AccessControl {
     }
 
     constructor(IERC20 _stakeToken, IERC20 _rewardToken) {
-        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
-
         stakeToken = _stakeToken;
         rewardToken = _rewardToken;
     }
@@ -117,7 +114,7 @@ contract Farm is Ownable, AccessControl {
                 .add(rewards[account]);
     }
 
-    function updateNFTBalance() internal {
+    function mintNFTs(uint256 oldAmount, uint256 newAmount) internal {
         for (uint256 i = 0; i < NFTCount; i++) {
             IMemberNFT memberNFT = connectedNFTs[i].memberNFT;
             uint256 cost = connectedNFTs[i].cost;
@@ -126,49 +123,59 @@ contract Farm is Ownable, AccessControl {
                 // NFT or cost not defined, skip id
                 continue;
             }
+            if (oldAmount < cost && newAmount >= cost) {
+                // New amount went below threshold, mint 1
+                bytes memory data;
+                memberNFT.mint(msg.sender, id, 1, data);
+            }
+        }
+    }
+
+    function burnNFTs(uint256 oldAmount, uint256 newAmount) internal {
+        for (uint256 i = 0; i < NFTCount; i++) {
+            IMemberNFT memberNFT = connectedNFTs[i].memberNFT;
+            uint256 cost = connectedNFTs[i].cost;
+            uint256 id = connectedNFTs[i].id;
             uint256 currentNFTBalance = memberNFT.balanceOf(msg.sender, id);
-            if (_balances[msg.sender] >= (cost)) {
-                // staked balance over threshold, make sure we have exactly 1 NFT
-                if (currentNFTBalance == 0) {
-                    // have 0 right now, mint 1
-                    bytes memory data;
-                    memberNFT.mint(msg.sender, id, 1, data);
-                } else if (currentNFTBalance > 1) {
-                    // have more than 1 right now, burn the extra
-                    memberNFT.burn(msg.sender, id, currentNFTBalance - 1);
-                } else {
-                    // have exactly 1, skip id
-                    continue;
-                }
-            } else {
-                // staked balance fall below threshold, make sure we have 0 NFT
-                if (currentNFTBalance > 0) {
-                    // have more than 0 right now, burn the extra
-                    memberNFT.burn(msg.sender, id, currentNFTBalance);
-                } else {
-                    // have 0, skip id
-                    continue;
-                }
+            if (
+                address(memberNFT) == address(0) ||
+                cost <= 0 ||
+                currentNFTBalance <= 0
+            ) {
+                // NFT, cost, or current balance not valid, skip ID
+                continue;
+            }
+            if (oldAmount >= cost && newAmount < cost) {
+                // New amount went below threshold, burn 1
+                memberNFT.burn(msg.sender, id, 1);
             }
         }
     }
 
     function stake(uint256 amount) public updateReward(msg.sender) {
         require(amount > 0, "Cannot stake 0");
+
+        uint256 oldAmount = _balances[msg.sender];
+        uint256 newAmount = _balances[msg.sender].add(amount);
+
         _totalSupply = _totalSupply.add(amount);
         _balances[msg.sender] = _balances[msg.sender].add(amount);
         stakeToken.safeTransferFrom(msg.sender, address(this), amount);
         emit Staked(msg.sender, amount);
-        updateNFTBalance();
+        mintNFTs(oldAmount, newAmount);
     }
 
     function unstake(uint256 amount) public updateReward(msg.sender) {
         require(amount > 0, "Cannot withdraw 0");
+
+        uint256 oldAmount = _balances[msg.sender];
+        uint256 newAmount = _balances[msg.sender].sub(amount);
+
         _totalSupply = _totalSupply.sub(amount);
         _balances[msg.sender] = _balances[msg.sender].sub(amount);
         stakeToken.safeTransfer(msg.sender, amount);
         emit Unstaked(msg.sender, amount);
-        updateNFTBalance();
+        burnNFTs(oldAmount, newAmount);
     }
 
     function exit() external {

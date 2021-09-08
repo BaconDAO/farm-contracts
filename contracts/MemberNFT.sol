@@ -57,16 +57,18 @@ contract MemberNFT is Context, AccessControl, Ownable, ERC1155 {
             hasRole(MINTER_ROLE, _msgSender()),
             "MemberNFT: must have minter role to mint"
         );
+        _mint(to, id, amount, data);
         // only mint if the amount to mint is less than or equal to 1, and the current balance is 0
         // this allows multiple farms to stake and attempt to mint NFT without reverting
-        if (amount <= 1 && balanceOf(to, id) == 0) {
-            _mint(to, id, amount, data);
-        }
+        // if (amount <= 1 && balanceOf(to, id) == 0) {
+        //     _mint(to, id, amount, data);
+        // }
     }
 
     /**
      * @dev xref:ROOT:erc1155.adoc#batch-operations[Batched] variant of {mint}.
      */
+
     function mintBatch(
         address to,
         uint256[] memory ids,
@@ -77,14 +79,19 @@ contract MemberNFT is Context, AccessControl, Ownable, ERC1155 {
             hasRole(MINTER_ROLE, _msgSender()),
             "MemberNFT: must have minter role to mint"
         );
+
         for (uint256 i = 0; i < ids.length; i++) {
-            // loop through all mints of batch
-            // only mint if the amount to mint is less than or equal to 1, and the current balance is 0
-            // this allows multiple farms to stake and attempt to mint NFT without reverting
-            if (amounts[i] <= 1 && balanceOf(to, ids[i]) == 0) {
-                _mint(to, ids[i], amounts[i], data);
-            }
+            _mint(to, ids[i], amounts[i], data);
         }
+
+        // for (uint256 i = 0; i < ids.length; i++) {
+        //     // loop through all mints of batch
+        //     // only mint if the amount to mint is less than or equal to 1, and the current balance is 0
+        //     // this allows multiple farms to stake and attempt to mint NFT without reverting
+        //     if (amounts[i] <= 1 && balanceOf(to, ids[i]) == 0) {
+        //         _mint(to, ids[i], amounts[i], data);
+        //     }
+        // }
     }
 
     /**
@@ -140,7 +147,7 @@ contract MemberNFT is Context, AccessControl, Ownable, ERC1155 {
         address to,
         uint256[] memory ids,
         uint256[] memory amounts,
-        bytes memory dat
+        bytes memory data
     ) public virtual override(ERC1155) {
         revert("MemberNFT: transfer not allowed");
     }
