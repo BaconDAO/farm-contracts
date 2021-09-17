@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./IMemberNFT.sol";
+import "./INFT.sol";
 
 contract Farm is Ownable {
     // this contract lets users stake/unstake ERC20 tokens and mints/burns ERC1155 tokens that represent their stake/membership
@@ -17,7 +17,7 @@ contract Farm is Ownable {
     IERC20 public stakeToken;
     IERC20 public rewardToken;
     struct connectedNFT {
-        IMemberNFT memberNFT;
+        INFT nft;
         uint256 id;
         uint256 cost;
     }
@@ -72,7 +72,7 @@ contract Farm is Ownable {
     }
 
     function setNFTDetails(
-        IMemberNFT[] memory NFTContracts,
+        INFT[] memory NFTContracts,
         uint256[] memory ids,
         uint256[] memory costs
     ) public onlyOwner {
@@ -81,7 +81,7 @@ contract Farm is Ownable {
             "Farm: setNFTDetails input arrays need to have same length"
         );
         for (uint256 i = 0; i < NFTContracts.length; i++) {
-            connectedNFTs[i].memberNFT = NFTContracts[i];
+            connectedNFTs[i].nft = NFTContracts[i];
             connectedNFTs[i].cost = costs[i];
             connectedNFTs[i].id = ids[i];
         }
@@ -116,29 +116,29 @@ contract Farm is Ownable {
 
     function mintNFTs(uint256 oldAmount, uint256 newAmount) internal {
         for (uint256 i = 0; i < NFTCount; i++) {
-            IMemberNFT memberNFT = connectedNFTs[i].memberNFT;
+            INFT nft = connectedNFTs[i].nft;
             uint256 cost = connectedNFTs[i].cost;
             uint256 id = connectedNFTs[i].id;
-            if (address(memberNFT) == address(0) || cost <= 0) {
+            if (address(nft) == address(0) || cost <= 0) {
                 // NFT or cost not defined, skip id
                 continue;
             }
             if (oldAmount < cost && newAmount >= cost) {
                 // New amount went below threshold, mint 1
                 bytes memory data;
-                memberNFT.mint(msg.sender, id, 1, data);
+                nft.mint(msg.sender, id, 1, data);
             }
         }
     }
 
     function burnNFTs(uint256 oldAmount, uint256 newAmount) internal {
         for (uint256 i = 0; i < NFTCount; i++) {
-            IMemberNFT memberNFT = connectedNFTs[i].memberNFT;
+            INFT nft = connectedNFTs[i].nft;
             uint256 cost = connectedNFTs[i].cost;
             uint256 id = connectedNFTs[i].id;
-            uint256 currentNFTBalance = memberNFT.balanceOf(msg.sender, id);
+            uint256 currentNFTBalance = nft.balanceOf(msg.sender, id);
             if (
-                address(memberNFT) == address(0) ||
+                address(nft) == address(0) ||
                 cost <= 0 ||
                 currentNFTBalance <= 0
             ) {
@@ -147,7 +147,7 @@ contract Farm is Ownable {
             }
             if (oldAmount >= cost && newAmount < cost) {
                 // New amount went below threshold, burn 1
-                memberNFT.burn(msg.sender, id, 1);
+                nft.burn(msg.sender, id, 1);
             }
         }
     }

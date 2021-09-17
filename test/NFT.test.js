@@ -13,7 +13,7 @@ const {
 } = require('./utils/utils.js');
 const { BigNumber } = ethers;
 
-describe('MemberNFT contract', function () {
+describe('NFT contract', function () {
 
   // reward period duration is 14 days = 1210000 seconds
   // reward amount divided by duration in seconds equals rewardRate
@@ -26,7 +26,7 @@ describe('MemberNFT contract', function () {
 
     snapshotId = await takeSnapshot();
 
-    const { memberToken, memberNFT, farm1 } = await deploy();
+    const { token, nft, farm1 } = await deploy();
 
     // set signer1 as the rewardDistributionManager, who can add additional rewards
     await farm1.setRewardDistribution(signer1.address);
@@ -38,31 +38,31 @@ describe('MemberNFT contract', function () {
 
   describe('safeTransferFrom()', async function () {
     beforeEach(async function () {
-      expect(await memberToken.approve(farm1.address, NFT_COSTS[2] * 10))
-        .to.emit(memberToken, 'Approval')
+      expect(await token.approve(farm1.address, NFT_COSTS[2] * 10))
+        .to.emit(token, 'Approval')
         .withArgs(signer1.address, farm1.address, NFT_COSTS[2] * 10);
     })
 
     it(`should revert`, async function () {
       let id = NFT_IDS[0]
       let data = ethers.utils.id("");
-      await expect(memberNFT.safeTransferFrom(signer1.address, signer2.address, id, 1, data))
-        .to.be.revertedWith("MemberNFT: transfer not allowed")
+      await expect(nft.safeTransferFrom(signer1.address, signer2.address, id, 1, data))
+        .to.be.revertedWith("NFT: transfer not allowed")
     });
   });
 
   describe('safeBatchTransferFrom()', async function () {
     beforeEach(async function () {
-      expect(await memberToken.approve(farm1.address, NFT_COSTS[2] * 10))
-        .to.emit(memberToken, 'Approval')
+      expect(await token.approve(farm1.address, NFT_COSTS[2] * 10))
+        .to.emit(token, 'Approval')
         .withArgs(signer1.address, farm1.address, NFT_COSTS[2] * 10);
     })
 
     it(`should revert`, async function () {
       let id = NFT_IDS[0]
       let data = ethers.utils.id("");
-      await expect(memberNFT.safeBatchTransferFrom(signer1.address, signer2.address, [id], [1], data))
-        .to.be.revertedWith("MemberNFT: transfer not allowed")
+      await expect(nft.safeBatchTransferFrom(signer1.address, signer2.address, [id], [1], data))
+        .to.be.revertedWith("NFT: transfer not allowed")
     });
   });
 
@@ -70,8 +70,8 @@ describe('MemberNFT contract', function () {
     it('can mint 1 NFT', async function () {
       let id = NFT_IDS[0]
       let data = ethers.utils.id("")
-      await memberNFT.grantRole(ethers.utils.id("MINTER_ROLE"), signer1.address);
-      await expect(memberNFT.mint(signer1.address, id, 1, data)).to.emit(memberNFT, "TransferSingle");
+      await nft.grantRole(ethers.utils.id("MINTER_ROLE"), signer1.address);
+      await expect(nft.mint(signer1.address, id, 1, data)).to.emit(nft, "TransferSingle");
     })
   });
 });

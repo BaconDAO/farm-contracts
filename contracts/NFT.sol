@@ -23,7 +23,7 @@ import "./IFarm.sol";
  * roles, as well as the default admin role, which will let it grant both minter
  * and burner roles to other accounts.
  */
-contract MemberNFT is Context, AccessControl, Ownable, ERC1155 {
+contract NFT is Context, AccessControl, Ownable, ERC1155 {
     using SafeMath for uint256;
 
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
@@ -55,7 +55,7 @@ contract MemberNFT is Context, AccessControl, Ownable, ERC1155 {
     ) public virtual {
         require(
             hasRole(MINTER_ROLE, _msgSender()),
-            "MemberNFT: must have minter role to mint"
+            "NFT: must have minter role to mint"
         );
         _mint(to, id, amount, data);
         // only mint if the amount to mint is less than or equal to 1, and the current balance is 0
@@ -77,7 +77,7 @@ contract MemberNFT is Context, AccessControl, Ownable, ERC1155 {
     ) public virtual {
         require(
             hasRole(MINTER_ROLE, _msgSender()),
-            "MemberNFT: must have minter role to mint"
+            "NFT: must have minter role to mint"
         );
 
         for (uint256 i = 0; i < ids.length; i++) {
@@ -110,7 +110,7 @@ contract MemberNFT is Context, AccessControl, Ownable, ERC1155 {
     ) public virtual {
         require(
             hasRole(BURNER_ROLE, _msgSender()),
-            "MemberNFT: must have burner role to burn"
+            "NFT: must have burner role to burn"
         );
 
         _burn(account, id, amount);
@@ -126,7 +126,7 @@ contract MemberNFT is Context, AccessControl, Ownable, ERC1155 {
     ) public virtual {
         require(
             hasRole(BURNER_ROLE, _msgSender()),
-            "MemberNFT: must have burner role to burn"
+            "NFT: must have burner role to burn"
         );
 
         _burnBatch(account, ids, amounts);
@@ -139,7 +139,7 @@ contract MemberNFT is Context, AccessControl, Ownable, ERC1155 {
         uint256 amount,
         bytes memory data
     ) public virtual override(ERC1155) {
-        revert("MemberNFT: transfer not allowed");
+        revert("NFT: transfer not allowed");
     }
 
     function safeBatchTransferFrom(
@@ -149,6 +149,6 @@ contract MemberNFT is Context, AccessControl, Ownable, ERC1155 {
         uint256[] memory amounts,
         bytes memory data
     ) public virtual override(ERC1155) {
-        revert("MemberNFT: transfer not allowed");
+        revert("NFT: transfer not allowed");
     }
 }
