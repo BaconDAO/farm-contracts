@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./INFT.sol";
+import "./IMemberToken.sol";
 
 contract Farm is Ownable {
     // this contract lets users stake/unstake ERC20 tokens and mints/burns ERC1155 tokens that represent their stake/membership
@@ -16,6 +17,7 @@ contract Farm is Ownable {
 
     IERC20 public stakeToken;
     IERC20 public rewardToken;
+    IMemberToken public memberToken;
     struct connectedNFT {
         INFT nft;
         uint256 id;
@@ -66,9 +68,14 @@ contract Farm is Ownable {
         _;
     }
 
-    constructor(IERC20 _stakeToken, IERC20 _rewardToken) {
+    constructor(
+        IERC20 _stakeToken,
+        IERC20 _rewardToken,
+        IMemberToken _memberToken
+    ) {
         stakeToken = _stakeToken;
         rewardToken = _rewardToken;
+        memberToken = _memberToken;
     }
 
     function setNFTDetails(
@@ -114,7 +121,7 @@ contract Farm is Ownable {
                 .add(rewards[account]);
     }
 
-    function mintNFTs(uint256 oldAmount, uint256 newAmount) internal {
+    function mintMembership(uint256 oldAmount, uint256 newAmount) internal {
         for (uint256 i = 0; i < NFTCount; i++) {
             INFT nft = connectedNFTs[i].nft;
             uint256 cost = connectedNFTs[i].cost;
@@ -127,11 +134,12 @@ contract Farm is Ownable {
                 // New amount went below threshold, mint 1
                 bytes memory data;
                 nft.mint(msg.sender, id, 1, data);
+                memberToken.mint(msg.sender, 1);
             }
         }
     }
 
-    function burnNFTs(uint256 oldAmount, uint256 newAmount) internal {
+    function burnMembership(uint256 oldAmount, uint256 newAmount) internal {
         for (uint256 i = 0; i < NFTCount; i++) {
             INFT nft = connectedNFTs[i].nft;
             uint256 cost = connectedNFTs[i].cost;
@@ -148,6 +156,7 @@ contract Farm is Ownable {
             if (oldAmount >= cost && newAmount < cost) {
                 // New amount went below threshold, burn 1
                 nft.burn(msg.sender, id, 1);
+                memberToken.burn(msg.sender, 1);
             }
         }
     }
@@ -162,7 +171,7 @@ contract Farm is Ownable {
         _balances[msg.sender] = _balances[msg.sender].add(amount);
         stakeToken.safeTransferFrom(msg.sender, address(this), amount);
         emit Staked(msg.sender, amount);
-        mintNFTs(oldAmount, newAmount);
+        mintMembership(oldAmount, newAmount);
     }
 
     function unstake(uint256 amount) public updateReward(msg.sender) {
@@ -175,7 +184,7 @@ contract Farm is Ownable {
         _balances[msg.sender] = _balances[msg.sender].sub(amount);
         stakeToken.safeTransfer(msg.sender, amount);
         emit Unstaked(msg.sender, amount);
-        burnNFTs(oldAmount, newAmount);
+        burnMembership(oldAmount, newAmount);
     }
 
     function exit() external {

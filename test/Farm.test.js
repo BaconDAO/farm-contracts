@@ -236,6 +236,50 @@ describe('farm1 contract', function () {
         .withArgs(farm1.address, ethers.constants.AddressZero, signer1.address, id2, 1);
       expect(await nft.balanceOf(signer1.address, id2)).to.equal(1);
     });
+
+    it(`can stake enough tokens to mint 1 MemberToken`, async function () {
+      let cost = NFT_COSTS[0]
+      expect(await memberToken.balanceOf(signer1.address)).to.equal(0);
+      expect(await farm1.stake(cost));
+      expect(await memberToken.balanceOf(signer1.address)).to.equal(1);
+    });
+
+    it(`can stake enough tokens to mint 2 MemberToken`, async function () {
+      let cost = NFT_COSTS[1]
+      expect(await memberToken.balanceOf(signer1.address)).to.equal(0);
+      expect(await farm1.stake(cost));
+      expect(await memberToken.balanceOf(signer1.address)).to.equal(2);
+    });
+
+    it(`can stake enough tokens to mint 3 MemberToken`, async function () {
+      let cost = NFT_COSTS[2]
+      expect(await memberToken.balanceOf(signer1.address)).to.equal(0);
+      expect(await farm1.stake(cost));
+      expect(await memberToken.balanceOf(signer1.address)).to.equal(3);
+    });
+
+    it(`can stake enough to mint 1 MemberToken, then stake more to mint another 1`, async function () {
+      let cost0 = NFT_COSTS[0]
+      let cost1 = NFT_COSTS[1]
+      let difference = cost1 - cost0
+      expect(await memberToken.balanceOf(signer1.address)).to.equal(0);
+      expect(await farm1.stake(cost0));
+      expect(await memberToken.balanceOf(signer1.address)).to.equal(1);
+      expect(await farm1.stake(difference));
+      expect(await memberToken.balanceOf(signer1.address)).to.equal(2);
+    });
+
+    it(`can stake enough tokens to mint 3 MemberTokens, then unstake to burn 2 MemberTokens`, async function () {
+      let cost2 = NFT_COSTS[2]
+      let cost0 = NFT_COSTS[0]
+      let difference = cost2 - cost0
+      expect(await memberToken.balanceOf(signer1.address)).to.equal(0);
+      expect(await farm1.stake(cost2));
+      expect(await memberToken.balanceOf(signer1.address)).to.equal(3);
+
+      expect(await farm1.unstake(difference));
+      expect(await memberToken.balanceOf(signer1.address)).to.equal(1);
+    });
   });
 
   describe('unstake()', async function () {
