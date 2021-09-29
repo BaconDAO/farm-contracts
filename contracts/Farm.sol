@@ -134,7 +134,7 @@ contract Farm is Ownable {
                 // New amount went below threshold, mint 1
                 bytes memory data;
                 nft.mint(msg.sender, id, 1, data);
-                memberToken.mint(msg.sender, 1);
+                memberToken.mint(msg.sender, 1 ether);
             }
         }
     }
@@ -156,7 +156,7 @@ contract Farm is Ownable {
             if (oldAmount >= cost && newAmount < cost) {
                 // New amount went below threshold, burn 1
                 nft.burn(msg.sender, id, 1);
-                memberToken.burn(msg.sender, 1);
+                memberToken.burn(msg.sender, 1 ether);
             }
         }
     }
